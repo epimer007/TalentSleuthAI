@@ -1,0 +1,22 @@
+body {
+  padding: 0;
+  margin: 0;
+  background: linear-gradient(135deg, #302b63, #22063d);
+  color: white;
+  font-family: sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+.container {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  height: fit-content;
+  padding: 100px;
+}
+.outerContainer {
+  box-sizing: border-box;
+  padding: 20px;
+}

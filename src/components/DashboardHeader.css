@@ -1,0 +1,65 @@
+.header {
+  box-sizing: border-box;
+  height: 65px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 4px solid;
+  border-image: linear-gradient(to right, #ff6900, #ff00ff, #ff8a00);
+  border-image-slice: 1;
+}
+.header div {
+  display: flex;
+  gap: 10px;
+  justify-content: end;
+  align-items: center;
+  font: bold 20px sans-serif;
+}
+@keyframes gradientMove {
+  0% {
+    background-position: 0%;
+  }
+  100% {
+    background-position: 100%;
+  }
+}
+
+.gradient-text-animated {
+  position: relative;
+  left: 30px;
+  scale: 1.4;
+  background: linear-gradient(270deg, #ff6900, #ff00ff, #ff00ff, #ff6900);
+  background-size: 400% 100%;
+  animation: gradientMove 3s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+.header div div {
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff6900, #ff0066);
+  box-shadow: 0 0 12px #ff6900cc;
+  max-height: 40px;
+}
+.header div div:hover {
+  scale: 1.025;
+  box-shadow: 0 6px 14px #ff00cc99;
+}
+.logout {
+  background: linear-gradient(135deg, #8d1ffc, #ff00cc);
+  color: white;
+  padding: 10px 12px;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px #ff00cc66;
+  transition: all 0.3s ease;
+}
+.logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px dashed #ff8a00;
+}

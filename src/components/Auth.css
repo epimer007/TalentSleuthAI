@@ -1,0 +1,97 @@
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+}
+
+.auth-form {
+  background: #1f1b3a;
+  padding: 30px 40px;
+  border-radius: 15px;
+  box-shadow: 0 0 150px 50px #9b51e0cc;
+  color: #ffffff;
+  width: 100%;
+  max-width: 600px;
+}
+
+.auth-form h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+  color: #ff8a00;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  margin-bottom: 6px;
+  font-size: 0.95em;
+  color: #cccccc;
+}
+
+.input-group input {
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1em;
+  background-color: #2f2b4a;
+  color: #fff;
+  outline: none;
+}
+
+.password-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #2f2b4a;
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.password-wrapper input {
+  flex: 1;
+  border: none;
+  padding: 12px 0;
+  background: none;
+  color: #fff;
+}
+
+.eye-icon {
+  cursor: pointer;
+  color: #aaa;
+  font-size: 1.1em;
+}
+
+.login-btn {
+  background-color: #ff8a00;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  width: 100%;
+  font-size: 1em;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.login-btn:hover {
+  background-color: #ff7b00;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.95em;
+  color: #ccc;
+}
+
+.register-link u {
+  cursor: pointer;
+  color: #00c3ff;
+}

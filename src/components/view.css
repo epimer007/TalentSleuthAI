@@ -1,0 +1,73 @@
+.outerView {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100vh;
+  position: fixed;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  backdrop-filter: blur(10px);
+}
+.close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 30px;
+  color: #fff;
+  cursor: pointer;
+  transition: color 0.3s;
+  z-index: 6;
+}
+.close:hover {
+  color: #ff0000;
+}
+
+.viewbox {
+  width: 700px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  border: 4px solid #fff;
+  padding: 20px;
+  border-radius: 20px;
+}
+
+.fit {
+  position: relative;
+  top: 20px;
+  height: 40px;
+  padding: 10px;
+  border-radius: 20px;
+  border: 2px solid #fff;
+  background: #ffffff20;
+  color: #fff;
+}
+.Strengths {
+  padding: 20px;
+  border-radius: 20px;
+  border: 2px solid #0dff00;
+  background: #0dff0020;
+  color: #0dff00;
+}
+.relevantProject {
+  padding: 20px;
+  border-radius: 20px;
+  border: 2px solid #00ffff;
+  background: #00ffff20;
+  color: #00ffff;
+}
+.Weaknesses {
+  padding: 20px;
+  border-radius: 20px;
+  border: 2px solid #ffffff;
+  background: #ffffff20;
+  color: #ffffff;
+}
+.redFlags {
+  padding: 20px;
+  border-radius: 20px;
+  border: 2px solid #ff0000;
+  background: #ff000020;
+  color: #ff0000;
+}

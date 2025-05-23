@@ -1,0 +1,27 @@
+.stats-card {
+  background: linear-gradient(
+    135deg,
+    rgba(122, 200, 255, 0.1),
+    rgba(255, 105, 0, 0.2)
+  );
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(13, 14, 44, 0.6);
+  color: #fff;
+  transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+}
+
+.stats-title {
+  font-size: 1.2rem;
+  color: #8d1ffc;
+}
+
+.stats-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00d084;
+}

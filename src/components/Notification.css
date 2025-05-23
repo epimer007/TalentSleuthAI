@@ -1,0 +1,44 @@
+.notBox {
+  margin: auto;
+  position: fixed !important;
+  top: 80px;
+  width: 30vw;
+  min-width: 200px;
+  max-width: 280px;
+  min-height: 80px;
+  height: fit-content;
+  color: white;
+  display: flex;
+  flex-wrap: wrap;
+  place-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  padding: 0px 20px;
+  transition: all 0.5s;
+  animation: notify 4s ease-out alternate;
+  z-index: 10;
+}
+@keyframes notify {
+  0% {
+    backdrop-filter: blur(0px);
+    filter: blur(200px);
+    top: -200px;
+    scale: 0.5;
+  }
+  20% {
+    filter: blur(0px);
+    top: 80px;
+    scale: 1;
+  }
+  80% {
+    filter: blur(0px);
+    backdrop-filter: blur(100px);
+    opacity: 1;
+  }
+  100% {
+    filter: blur(20px);
+    backdrop-filter: blur(0px);
+    top: 80px;
+    opacity: 0;
+  }
+}

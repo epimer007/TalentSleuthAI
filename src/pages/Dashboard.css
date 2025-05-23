@@ -1,0 +1,31 @@
+.dashboard-container,
+.container {
+  box-sizing: border-box;
+  border: 3px solid #8d1ffc;
+  border-radius: 20px;
+  padding: 10px;
+  background-color: #1e293b;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.section-title {
+  color: #fcb900;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
