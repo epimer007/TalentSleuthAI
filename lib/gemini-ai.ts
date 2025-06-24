@@ -81,7 +81,7 @@ You are an expert resume parser. Extract the following fields from the provided 
 Resume Text:
 ${rawText}
 `
-  // Use only gemini-1.5-flash model
+  // Use only gemini-2.0-flash model
   let model = null
   try {
     model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
@@ -100,14 +100,14 @@ ${rawText}
   // Try to parse JSON from the response
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
-    throw new Error("No valid JSON found in Gemini response")
+    throw new Error("The uploaded resume does not support the format. Try uploading a different resume.")
   }
 
   let parsed: ParsedResume
   try {
     parsed = JSON.parse(jsonMatch[0])
   } catch (parseError) {
-    throw new Error("Failed to parse Gemini response JSON: " + parseError)
+    throw new Error("The uploaded resume does not support the format. Try uploading a different resume.")
   }
 
   // Always include the raw text
