@@ -81,25 +81,16 @@ You are an expert resume parser. Extract the following fields from the provided 
 Resume Text:
 ${rawText}
 `
-  const modelNames = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-latest", "gemini-1.0-pro"]
+  // Use only gemini-1.5-flash model
   let model = null
-  let lastError = null
-
-  for (const modelName of modelNames) {
-    try {
-      model = genAI.getGenerativeModel({ model: modelName })
-      // Test the model with a simple prompt
-      const testResult = await model.generateContent("Hello")
-      await testResult.response.text()
-      break
-    } catch (error) {
-      lastError = error
-      model = null
-    }
+  try {
+    model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+  } catch (error) {
+    throw new Error("Gemini 2.5 Flash model not available: " + error)
   }
 
   if (!model) {
-    throw new Error("No available Gemini models found: " + lastError)
+    throw new Error("Gemini 2.5 Flash model could not be initialized")
   }
 
   const result = await model.generateContent(prompt)
@@ -208,25 +199,16 @@ Focus on:
 Provide specific, actionable insights based on the data provided.
 `
 
-  const modelNames = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-latest", "gemini-1.0-pro"]
+  // Use only gemini-1.5-flash model
   let model = null
-  let lastError = null
-
-  for (const modelName of modelNames) {
-    try {
-      model = genAI.getGenerativeModel({ model: modelName })
-      // Test the model with a simple prompt
-      const testResult = await model.generateContent("Hello")
-      await testResult.response.text()
-      break
-    } catch (error) {
-      lastError = error
-      model = null
-    }
+  try {
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+  } catch (error) {
+    throw new Error("Gemini 1.5 Flash model not available: " + error)
   }
 
   if (!model) {
-    throw new Error("No available Gemini models found: " + lastError)
+    throw new Error("Gemini 1.5 Flash model could not be initialized")
   }
 
   const result = await model.generateContent(prompt)
