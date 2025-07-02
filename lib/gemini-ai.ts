@@ -84,13 +84,13 @@ ${rawText}
   // Use only gemini-2.0-flash model
   let model = null
   try {
-    model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
+    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
   } catch (error) {
-    throw new Error("Gemini 2.0 Flash model not available: " + error)
+    throw new Error("Gemini 1.5 Flash model not available: " + error)
   }
 
   if (!model) {
-    throw new Error("Gemini 2.0 Flash model could not be initialized")
+    throw new Error("Gemini 1.5 Flash model could not be initialized")
   }
 
   const result = await model.generateContent(prompt)
