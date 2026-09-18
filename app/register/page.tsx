@@ -4,8 +4,10 @@ import { useAuth } from "@/context/AuthContext"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { AuthShell } from "@/components/auth-shell"
 import Link from "next/link"
-import { Brain } from "lucide-react"
 
 export default function RegisterPage() {
   const { user, registerWithEmail } = useAuth()
@@ -37,59 +39,82 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-100 via-blue-200 to-blue-400">
-      <div className="w-full max-w-md px-4 sm:px-8 bg-white/90 rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col items-center border border-blue-100">
-        <Brain className="h-12 w-12 sm:h-14 sm:w-14 text-blue-600 mb-4 drop-shadow" />
-        <h1 className="text-2xl sm:text-3xl font-extrabold mb-1 text-gray-900 tracking-tight text-center">Create Your Account</h1>
-        <p className="text-gray-500 mb-6 text-center text-base sm:text-lg">Register for TalentSleuth AI</p>
-        <form onSubmit={handleRegister} className="w-full flex flex-col gap-4 mb-4">
-          <input
+    <AuthShell>
+      <p className="eyebrow-accent mb-3">Register</p>
+      <h1 className="font-display text-3xl font-bold tracking-[-0.02em]">Create your account</h1>
+      <p className="mt-2 text-muted-foreground">Register for TalentSleuth AI</p>
+
+      <form onSubmit={handleRegister} className="mt-8 flex flex-col gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
             type="text"
-            placeholder="Name"
-            className="border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded px-3 py-2 transition w-full"
+            placeholder="Your full name"
+            autoComplete="name"
+            className="h-11 rounded-xl bg-secondary/50 transition-shadow focus-visible:ring-primary/60 focus-visible:ring-offset-0 focus-visible:shadow-glow"
             value={name}
             onChange={e => setName(e.target.value)}
             required
           />
-          <input
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
             type="email"
-            placeholder="Email"
-            className="border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded px-3 py-2 transition w-full"
+            placeholder="you@company.com"
+            autoComplete="email"
+            className="h-11 rounded-xl bg-secondary/50 transition-shadow focus-visible:ring-primary/60 focus-visible:ring-offset-0 focus-visible:shadow-glow"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
           />
-          <input
-            type="password"
-            placeholder="Password"
-            className="border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded px-3 py-2 transition w-full"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            className="border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded px-3 py-2 transition w-full"
-            value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
-            required
-          />
-          {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-          <Button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white w-full px-6 py-2 rounded font-semibold shadow transition"
-          >
-            Register
-          </Button>
-        </form>
-        <p className="text-sm mt-4 text-gray-600 text-center">
-          Already have an account?{" "}
-          <Link href="/signin" className="text-blue-600 underline hover:text-blue-800 font-medium">
-            Sign in
-          </Link>
-        </p>
-      </div>
-    </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              className="h-11 rounded-xl bg-secondary/50 transition-shadow focus-visible:ring-primary/60 focus-visible:ring-offset-0 focus-visible:shadow-glow"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="confirm-password">Confirm password</Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              className="h-11 rounded-xl bg-secondary/50 transition-shadow focus-visible:ring-primary/60 focus-visible:ring-offset-0 focus-visible:shadow-glow"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+        {error && (
+          <p role="alert" className="animate-fade-in-up rounded-xl border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+            {error}
+          </p>
+        )}
+        <Button type="submit" className="btn-glow h-11 w-full rounded-full text-base font-medium">
+          Register
+        </Button>
+      </form>
+
+      <p className="mt-8 text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/signin" className="font-medium text-primary-bright underline-offset-4 hover:underline">
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   )
 }

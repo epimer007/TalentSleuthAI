@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Wordmark } from "@/components/wordmark"
+import { CountUp, Spotlight, Aurora } from "@/components/motion"
+import { cn } from "@/lib/utils"
 import {
-  Brain,
   ArrowLeft,
-  User,
   Mail,
   MapPin,
   Briefcase,
@@ -22,6 +21,11 @@ import {
   Download,
   Target,
   ExternalLink,
+  Globe,
+  Sparkles,
+  MessageSquareText,
+  ListChecks,
+  Brain,
 } from "lucide-react"
 import Link from "next/link"
 import type { ParsedResume } from "@/lib/resume-parser"
@@ -44,6 +48,57 @@ declare module "jspdf" {
       [key: string]: any
     }
   }
+}
+
+const tabTriggerClass =
+  "relative h-full flex-none rounded-none border-b-2 border-transparent px-1 py-3.5 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+
+/** Mono, ruled section heading used throughout the dossier. */
+function SectionHeading({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <h3 className="flex items-center gap-2.5 border-b border-border pb-3 font-display text-lg font-semibold">
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
+        <Icon className="h-3.5 w-3.5 text-primary-bright" strokeWidth={2} />
+      </span>
+      {children}
+    </h3>
+  )
+}
+
+/** Horizontal score bar that grows in on first paint. */
+function ScoreBar({ value, delay = 0, className }: { value: number; delay?: number; className?: string }) {
+  return (
+    <div className={cn("h-1.5 w-full overflow-hidden rounded-full bg-secondary", className)}>
+      <div
+        className="bar-grow h-full rounded-full bg-gradient-to-r from-primary to-cyan shadow-[0_0_12px_hsl(var(--primary)/0.6)]"
+        style={{ width: `${value}%`, animationDelay: `${delay}ms` }}
+      />
+    </div>
+  )
+}
+
+function StatusPanel({
+  icon: Icon,
+  tone,
+  title,
+  action,
+}: {
+  icon: React.ElementType
+  tone: "neutral" | "warn" | "danger"
+  title: string
+  action?: React.ReactNode
+}) {
+  const color = tone === "danger" ? "text-danger" : tone === "warn" ? "text-warning" : "text-primary-bright"
+  return (
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
+      <Aurora />
+      <div className="glass-strong animate-fade-in-up relative w-full max-w-sm rounded-2xl p-8 text-center">
+        <Icon className={`mx-auto mb-4 h-8 w-8 ${color}`} />
+        <p className="text-base font-medium">{title}</p>
+        {action && <div className="mt-6">{action}</div>}
+      </div>
+    </div>
+  )
 }
 
 export default function AnalysisPage() {
@@ -212,73 +267,77 @@ export default function AnalysisPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-400 flex items-center justify-center">
-        <div className="text-center">
-          <Brain className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-lg text-gray-600">Loading analysis...</p>
-        </div>
-      </div>
-    )
+    return <StatusPanel icon={Brain} tone="neutral" title="Loading analysis..." />
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-400 flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-          <p className="text-lg text-red-600 mb-4">{error}</p>
+      <StatusPanel
+        icon={AlertTriangle}
+        tone="danger"
+        title={error}
+        action={
           <Link href="/upload">
-            <Button>Reupload Resume</Button>
+            <Button className="btn-glow rounded-full">Reupload Resume</Button>
           </Link>
-        </div>
-      </div>
+        }
+      />
     )
   }
 
   if (!analysisData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-400 flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-          <p className="text-lg text-gray-600 mb-4">No analysis data found</p>
+      <StatusPanel
+        icon={AlertTriangle}
+        tone="warn"
+        title="No analysis data found"
+        action={
           <Link href="/upload">
-            <Button>Upload New Resume</Button>
+            <Button className="btn-glow rounded-full">Upload New Resume</Button>
           </Link>
-        </div>
-      </div>
+        }
+      />
     )
   }
 
   const { resume, github, analysis } = analysisData
 
+  const scoreRows = [
+    { label: "Technical Skills", value: analysis.technicalSkillsScore },
+    { label: "Experience Level", value: analysis.experienceScore },
+    { label: "Profile Completeness", value: analysis.profileCompletenessScore },
+    { label: "Data Consistency", value: analysis.dataConsistencyScore },
+  ]
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-400">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Header */}
-      <header className="border-b bg-white/70 backdrop-blur-lg sticky top-0 z-50 shadow-md">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/upload" className="flex items-center space-x-2">
-            <ArrowLeft className="h-5 w-5" />
-            <Brain className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">TalentSleuth AI</span>
-          </Link>
-          <Badge
-            variant="secondary"
-            className="bg-blue-100 text-blue-700 text-sm md:text-base shadow px-2 md:px-4 py-1 md:py-2"
-          >
-            Candidate Analysis
-          </Badge>
+      <header className="sticky top-0 z-50 border-b border-border bg-background/70 backdrop-blur-xl">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/upload"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-secondary/60 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+              aria-label="Back to upload"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <Wordmark href="/upload" />
+          </div>
+          <p className="eyebrow-accent">Candidate analysis</p>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-10 max-w-7xl">
+      <div className="container mx-auto w-full max-w-6xl flex-1 px-4 py-10">
         {/* Candidate Header */}
-        <Card className="mb-10 border-0 shadow-2xl bg-white/90 rounded-2xl">
-          <CardContent className="p-8">
-            <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-              <Avatar className="h-24 w-24 shadow-lg ring-4 ring-blue-200">
+        <div className="glass-strong animate-fade-in-up relative mb-8 overflow-hidden rounded-2xl px-6 py-8 md:px-8">
+          <Aurora className="opacity-60" />
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
+            <div className="relative shrink-0">
+              <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-primary to-cyan opacity-70 blur-sm" aria-hidden="true" />
+              <Avatar className="relative h-20 w-20 border-2 border-background bg-secondary md:h-24 md:w-24">
                 <AvatarImage src={github?.profile.avatar_url || "/placeholder.svg"} alt={resume.name || "Candidate"} />
-                <AvatarFallback className="text-2xl">
+                <AvatarFallback className="bg-secondary font-display text-2xl font-bold">
                   {resume.name
                     ? resume.name
                         .split(" ")
@@ -287,459 +346,382 @@ export default function AnalysisPage() {
                     : "??"}
                 </AvatarFallback>
               </Avatar>
+            </div>
 
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{resume.name || "Candidate Name"}</h1>
-                    <p className="text-xl text-gray-600 mb-2">{resume.experience[0]?.position || "Professional"}</p>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-600">{analysis.overallScore}</div>
-                      <div className="text-sm text-gray-500">Overall Score</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-green-600">{analysis.roleMatchScore}%</div>
-                      <div className="text-sm text-gray-500">Role Match</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
-                  {resume.email && (
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 mr-2" />
-                      {resume.email}
-                    </div>
-                  )}
-                  {(resume.location || github?.profile.location) && (
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      {resume.location || github?.profile.location}
-                    </div>
-                  )}
-                  {resume.experience.length > 0 && (
-                    <div className="flex items-center">
-                      <Briefcase className="h-4 w-4 mr-2" />
-                      {resume.experience.length} positions
-                    </div>
-                  )}
-                </div>
+            <div className="min-w-0 flex-1">
+              <p className="eyebrow-accent mb-2">Candidate dossier</p>
+              <h1 className="font-display text-3xl font-bold tracking-[-0.02em] md:text-4xl">{resume.name || "Candidate Name"}</h1>
+              <p className="mt-1 text-base text-primary-bright">{resume.experience[0]?.position || "Professional"}</p>
+              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                {resume.email && (
+                  <span className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    {resume.email}
+                  </span>
+                )}
+                {(resume.location || github?.profile.location) && (
+                  <span className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    {resume.location || github?.profile.location}
+                  </span>
+                )}
+                {resume.experience.length > 0 && (
+                  <span className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4" />
+                    <span className="figure">{resume.experience.length}</span> positions
+                  </span>
+                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="glass flex shrink-0 items-stretch divide-x divide-border rounded-xl">
+              <div className="px-6 py-4 text-center">
+                <CountUp value={analysis.overallScore} className="figure text-4xl font-semibold leading-none text-glow" />
+                <div className="eyebrow mt-2">Overall score</div>
+              </div>
+              <div className="px-6 py-4 text-center">
+                <CountUp value={analysis.roleMatchScore} suffix="%" className="figure text-4xl font-semibold leading-none" />
+                <div className="eyebrow mt-2">Role match</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 bg-white border shadow-sm rounded-xl mb-8">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="platforms">Platforms</TabsTrigger>
-            <TabsTrigger value="matching">Role Matching</TabsTrigger>
-            <TabsTrigger value="insights">AI Insights</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in-up space-y-8" style={{ animationDelay: "120ms" }}>
+          <div className="overflow-x-auto border-b border-border">
+            <TabsList className="-mb-px h-auto justify-start gap-6 rounded-none bg-transparent p-0">
+              <TabsTrigger value="overview" className={tabTriggerClass}>Overview</TabsTrigger>
+              <TabsTrigger value="platforms" className={tabTriggerClass}>Platforms</TabsTrigger>
+              <TabsTrigger value="matching" className={tabTriggerClass}>Role Matching</TabsTrigger>
+              <TabsTrigger value="insights" className={tabTriggerClass}>AI Insights</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-8">
-            <div className="grid lg:grid-cols-3 gap-8">
+          <TabsContent value="overview" className="animate-fade-in-up mt-0 space-y-6">
+            <div className="grid gap-4 lg:grid-cols-3">
               {/* Score Breakdown */}
-              <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Star className="mr-2 h-5 w-5" />
-                    Score Breakdown
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Technical Skills</span>
-                      <span className="text-sm text-gray-600">{analysis.technicalSkillsScore}%</span>
+              <Spotlight className="glass space-y-5 rounded-2xl p-6">
+                <SectionHeading icon={Star}>Score breakdown</SectionHeading>
+                <div className="relative space-y-4">
+                  {scoreRows.map((row, i) => (
+                    <div key={row.label}>
+                      <div className="mb-2 flex items-baseline justify-between">
+                        <span className="text-sm font-medium">{row.label}</span>
+                        <CountUp value={row.value} suffix="%" className="figure text-sm font-semibold" />
+                      </div>
+                      <ScoreBar value={row.value} delay={150 + i * 100} />
                     </div>
-                    <Progress value={analysis.technicalSkillsScore} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Experience Level</span>
-                      <span className="text-sm text-gray-600">{analysis.experienceScore}%</span>
-                    </div>
-                    <Progress value={analysis.experienceScore} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Profile Completeness</span>
-                      <span className="text-sm text-gray-600">{analysis.profileCompletenessScore}%</span>
-                    </div>
-                    <Progress value={analysis.profileCompletenessScore} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Data Consistency</span>
-                      <span className="text-sm text-gray-600">{analysis.dataConsistencyScore}%</span>
-                    </div>
-                    <Progress value={analysis.dataConsistencyScore} className="h-2" />
-                  </div>
-                </CardContent>
-              </Card>
+                  ))}
+                </div>
+              </Spotlight>
 
               {/* Skills */}
-              <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-                <CardHeader>
-                  <CardTitle>Key Skills</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {resume.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-700">
-                        {skill}
+              <Spotlight className="glass space-y-5 rounded-2xl p-6">
+                <SectionHeading icon={Target}>Key skills</SectionHeading>
+                <div className="relative flex flex-wrap gap-2">
+                  {resume.skills.map((skill, index) => (
+                    <Badge key={index} variant="outline" className="rounded-md border-border bg-secondary/60 px-2.5 py-1 font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/10">
+                      {skill}
+                    </Badge>
+                  ))}
+                  {github &&
+                    Object.keys(github.languages).map((language, index) => (
+                      <Badge key={`github-${index}`} className="rounded-md border border-success/30 bg-success/10 px-2.5 py-1 font-medium text-success shadow-none hover:bg-success/15">
+                        <Github className="mr-1 h-3 w-3" />
+                        {language}
                       </Badge>
                     ))}
-                    {github &&
-                      Object.keys(github.languages).map((language, index) => (
-                        <Badge key={`github-${index}`} variant="secondary" className="bg-green-100 text-green-700">
-                          {language}
-                        </Badge>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </Spotlight>
 
               {/* AI Summary */}
-              <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-                <CardHeader>
-                  <CardTitle>AI Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-700 mb-4">{analysis.summary}</p>
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-green-700 text-sm flex items-center">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Top Strengths
-                    </h4>
-                    <ul className="text-xs space-y-1">
-                      {analysis.strengths.slice(0, 3).map((strength, index) => (
-                        <li key={index} className="text-gray-600">
-                          • {strength}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
+              <Spotlight className="glass space-y-5 rounded-2xl p-6">
+                <SectionHeading icon={Sparkles}>AI summary</SectionHeading>
+                <p className="relative text-sm leading-relaxed text-foreground/85">{analysis.summary}</p>
+                <div className="relative space-y-2">
+                  <h4 className="eyebrow flex items-center gap-1.5 text-success">
+                    <CheckCircle className="h-3 w-3" />
+                    Top strengths
+                  </h4>
+                  <ul className="space-y-1.5 text-sm">
+                    {analysis.strengths.slice(0, 3).map((strength, index) => (
+                      <li key={index} className="flex items-start gap-2 text-muted-foreground">
+                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-success" aria-hidden="true" />
+                        {strength}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Spotlight>
             </div>
 
             {/* Work History */}
-            <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Briefcase className="mr-2 h-5 w-5" />
-                  Work History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {resume.experience.map((job, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{job.position}</h4>
-                        <p className="text-gray-600">
-                          {job.company} • {job.duration}
-                        </p>
-                        {job.description && <p className="text-sm text-gray-500 mt-1">{job.description}</p>}
-                      </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-700">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Verified
-                      </Badge>
+            <div className="glass space-y-5 rounded-2xl p-6">
+              <SectionHeading icon={Briefcase}>Work history</SectionHeading>
+              <ol className="divide-y divide-border">
+                {resume.experience.map((job, index) => (
+                  <li key={index} className="flex flex-col gap-2 py-4 first:pt-0 last:pb-0 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <h4 className="font-semibold">{job.position}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {job.company} · <span className="figure">{job.duration}</span>
+                      </p>
+                      {job.description && <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">{job.description}</p>}
                     </div>
-                  ))}
-                  {resume.experience.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">No work experience found in resume</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    <Badge className="w-fit shrink-0 border border-success/30 bg-success/10 text-success shadow-none hover:bg-success/15">
+                      <CheckCircle className="mr-1 h-3 w-3" />
+                      Verified
+                    </Badge>
+                  </li>
+                ))}
+                {resume.experience.length === 0 && (
+                  <p className="py-6 text-center text-sm text-muted-foreground">No work experience found in resume</p>
+                )}
+              </ol>
+            </div>
           </TabsContent>
 
           {/* Platforms Tab */}
-          <TabsContent value="platforms" className="space-y-8">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <TabsContent value="platforms" className="animate-fade-in-up mt-0 space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* GitHub */}
-              <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Github className="mr-2 h-5 w-5" />
-                    GitHub Profile
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {github ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Profile Found</span>
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <p>
-                          <strong>Repositories:</strong> {github.profile.public_repos}
-                        </p>
-                        <p>
-                          <strong>Followers:</strong> {github.profile.followers}
-                        </p>
-                        <p>
-                          <strong>Top Languages:</strong> {Object.keys(github.languages).slice(0, 3).join(", ")}
-                        </p>
-                      </div>
-                      <Button variant="outline" size="sm" className="w-full" asChild>
-                        <a href={github.profile.html_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          View Profile
-                        </a>
-                      </Button>
+              <Spotlight className="glass space-y-4 rounded-2xl p-6">
+                <SectionHeading icon={Github}>GitHub profile</SectionHeading>
+                {github ? (
+                  <div className="relative space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border border-success/30 bg-success/10 px-3 py-2">
+                      <span className="text-xs font-semibold text-success">Profile found</span>
+                      <CheckCircle className="h-4 w-4 text-success" />
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Profile Found</span>
-                        <AlertTriangle className="h-5 w-5 text-orange-600" />
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {resume.githubUrl ? "Unable to fetch GitHub data" : "No GitHub URL found in resume"}
-                      </p>
+                    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+                      <dt className="text-muted-foreground">Repositories</dt>
+                      <dd className="figure font-semibold">{github.profile.public_repos}</dd>
+                      <dt className="text-muted-foreground">Followers</dt>
+                      <dd className="figure font-semibold">{github.profile.followers}</dd>
+                      <dt className="text-muted-foreground">Top languages</dt>
+                      <dd className="font-medium">{Object.keys(github.languages).slice(0, 3).join(", ")}</dd>
+                    </dl>
+                    <Button variant="outline" size="sm" className="w-full rounded-full bg-secondary/60 font-medium" asChild>
+                      <a href={github.profile.html_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-1 h-3 w-3" />
+                        View Profile
+                      </a>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="relative space-y-3">
+                    <div className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 px-3 py-2">
+                      <span className="text-xs font-semibold text-warning">Profile not found</span>
+                      <AlertTriangle className="h-4 w-4 text-warning" />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <p className="text-sm text-muted-foreground">
+                      {resume.githubUrl ? "Unable to fetch GitHub data" : "No GitHub URL found in resume"}
+                    </p>
+                  </div>
+                )}
+              </Spotlight>
 
               {/* LinkedIn */}
-              <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Linkedin className="mr-2 h-5 w-5" />
-                    LinkedIn Profile
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Profile Found</span>
-                      {resume.linkedinUrl ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <AlertTriangle className="h-5 w-5 text-orange-600" />
-                      )}
+              <Spotlight className="glass space-y-4 rounded-2xl p-6">
+                <SectionHeading icon={Linkedin}>LinkedIn profile</SectionHeading>
+                <div className="relative space-y-4">
+                  {resume.linkedinUrl ? (
+                    <div className="flex items-center justify-between rounded-lg border border-success/30 bg-success/10 px-3 py-2">
+                      <span className="text-xs font-semibold text-success">Profile found</span>
+                      <CheckCircle className="h-4 w-4 text-success" />
                     </div>
-                    {resume.linkedinUrl ? (
-                      <Button variant="outline" size="sm" className="w-full" asChild>
-                        <a href={resume.linkedinUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          View Profile
-                        </a>
-                      </Button>
-                    ) : (
-                      <p className="text-sm text-gray-600">No LinkedIn URL found in resume</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  ) : (
+                    <div className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 px-3 py-2">
+                      <span className="text-xs font-semibold text-warning">Profile not found</span>
+                      <AlertTriangle className="h-4 w-4 text-warning" />
+                    </div>
+                  )}
+                  {resume.linkedinUrl ? (
+                    <Button variant="outline" size="sm" className="w-full rounded-full bg-secondary/60 font-medium" asChild>
+                      <a href={resume.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-1 h-3 w-3" />
+                        View Profile
+                      </a>
+                    </Button>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No LinkedIn URL found in resume</p>
+                  )}
+                </div>
+              </Spotlight>
 
               {/* Portfolio */}
-              <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <User className="mr-2 h-5 w-5" />
-                    Portfolio Website
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Website Found</span>
-                      {resume.portfolioUrl ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <AlertTriangle className="h-5 w-5 text-orange-600" />
-                      )}
+              <Spotlight className="glass space-y-4 rounded-2xl p-6">
+                <SectionHeading icon={Globe}>Portfolio website</SectionHeading>
+                <div className="relative space-y-4">
+                  {resume.portfolioUrl ? (
+                    <div className="flex items-center justify-between rounded-lg border border-success/30 bg-success/10 px-3 py-2">
+                      <span className="text-xs font-semibold text-success">Website found</span>
+                      <CheckCircle className="h-4 w-4 text-success" />
                     </div>
-                    {resume.portfolioUrl ? (
-                      <Button variant="outline" size="sm" className="w-full" asChild>
-                        <a href={resume.portfolioUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          View Website
-                        </a>
-                      </Button>
-                    ) : (
-                      <p className="text-sm text-gray-600">No portfolio URL found in resume</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  ) : (
+                    <div className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 px-3 py-2">
+                      <span className="text-xs font-semibold text-warning">Website not found</span>
+                      <AlertTriangle className="h-4 w-4 text-warning" />
+                    </div>
+                  )}
+                  {resume.portfolioUrl ? (
+                    <Button variant="outline" size="sm" className="w-full rounded-full bg-secondary/60 font-medium" asChild>
+                      <a href={resume.portfolioUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-1 h-3 w-3" />
+                        View Website
+                      </a>
+                    </Button>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No portfolio URL found in resume</p>
+                  )}
+                </div>
+              </Spotlight>
             </div>
 
             {/* GitHub Repositories */}
             {github && github.repositories.length > 0 && (
-              <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-                <CardHeader>
-                  <CardTitle>Recent GitHub Repositories</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {github.repositories.slice(0, 6).map((repo, index) => (
-                      <div key={index} className="p-4 border rounded-lg bg-gray-50">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-sm">{repo.name}</h4>
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Star className="h-3 w-3 mr-1" />
-                            {repo.stargazers_count}
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-2">{repo.description || "No description"}</p>
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-xs">
-                            {repo.language || "Unknown"}
-                          </Badge>
-                          <a
-                            href={repo.html_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline"
-                          >
-                            View →
-                          </a>
+              <div className="glass space-y-5 rounded-2xl p-6">
+                <SectionHeading icon={Github}>Recent GitHub repositories</SectionHeading>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {github.repositories.slice(0, 6).map((repo, index) => (
+                    <Spotlight key={index} className="group rounded-xl border border-border bg-background/50 p-4 transition-transform duration-500 [transition-timing-function:var(--ease-out-quint)] hover:-translate-y-0.5">
+                      <div className="relative mb-2 flex items-start justify-between gap-3">
+                        <h4 className="truncate text-sm font-semibold transition-colors group-hover:text-primary-bright">{repo.name}</h4>
+                        <div className="figure flex shrink-0 items-center text-xs text-muted-foreground">
+                          <Star className="mr-1 h-3 w-3 fill-warning text-warning" />
+                          {repo.stargazers_count}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      <p className="relative mb-3 line-clamp-2 text-xs text-muted-foreground">{repo.description || "No description"}</p>
+                      <div className="relative flex items-center justify-between">
+                        <Badge variant="secondary" className="rounded-md font-mono text-[10px] font-medium">
+                          {repo.language || "Unknown"}
+                        </Badge>
+                        <a
+                          href={repo.html_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-primary-bright hover:underline"
+                        >
+                          View →
+                        </a>
+                      </div>
+                    </Spotlight>
+                  ))}
+                </div>
+              </div>
             )}
           </TabsContent>
 
           {/* Role Matching Tab */}
-          <TabsContent value="matching" className="space-y-8">
-            <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Target className="mr-2 h-5 w-5" />
-                  Role Compatibility Analysis
-                </CardTitle>
-                <CardDescription>AI-powered analysis of candidate fit for the specified role</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h4 className="font-medium mb-4">Skill Alignment</h4>
-                    <div className="space-y-3">
-                      {Object.entries(analysis.skillAlignment).map(([skill, score]) => (
-                        <div key={skill}>
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm">{skill}</span>
-                            <span className="text-sm font-medium">{score}%</span>
-                          </div>
-                          <Progress value={score} className="h-2" />
+          <TabsContent value="matching" className="animate-fade-in-up mt-0 space-y-6">
+            <div className="glass rounded-2xl p-6 md:p-8">
+              <div className="mb-8">
+                <SectionHeading icon={Target}>Role compatibility analysis</SectionHeading>
+                <p className="mt-3 text-sm text-muted-foreground">AI-powered analysis of candidate fit for the specified role</p>
+              </div>
+              <div className="grid gap-10 md:grid-cols-2">
+                <div>
+                  <h4 className="eyebrow mb-5">Skill alignment</h4>
+                  <div className="space-y-4">
+                    {Object.entries(analysis.skillAlignment).map(([skill, score], i) => (
+                      <div key={skill}>
+                        <div className="mb-2 flex items-baseline justify-between">
+                          <span className="text-sm font-medium">{skill}</span>
+                          <span className="figure text-sm font-semibold text-primary-bright">{score}%</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-4">Overall Assessment</h4>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                        <span className="text-sm">Role Match Score</span>
-                        <Badge className="bg-blue-100 text-blue-700">{analysis.roleMatchScore}%</Badge>
+                        <ScoreBar value={score} delay={100 + i * 80} />
                       </div>
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <span className="text-sm">Technical Skills</span>
-                        <Badge className="bg-green-100 text-green-700">{analysis.technicalSkillsScore}%</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <span className="text-sm">Experience Level</span>
-                        <Badge className="bg-purple-100 text-purple-700">{analysis.experienceScore}%</Badge>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
+                <div>
+                  <h4 className="eyebrow mb-5">Overall assessment</h4>
+                  <dl className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                    {[
+                      { label: "Role Match Score", value: analysis.roleMatchScore },
+                      { label: "Technical Skills", value: analysis.technicalSkillsScore },
+                      { label: "Experience Level", value: analysis.experienceScore },
+                    ].map((row) => (
+                      <div key={row.label} className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-secondary/40">
+                        <dt className="text-sm">{row.label}</dt>
+                        <dd><CountUp value={row.value} suffix="%" className="figure text-sm font-semibold" /></dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
 
-                <div className="mt-8 p-6 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">AI Recommendation</h4>
-                  <p className="text-blue-800">{analysis.summary}</p>
+              <div className="glass-strong relative mt-8 overflow-hidden rounded-2xl p-6">
+                <Aurora className="opacity-50" />
+                <div className="relative">
+                  <p className="eyebrow-accent mb-3">AI recommendation</p>
+                  <p className="text-base leading-relaxed">{analysis.summary}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
 
           {/* AI Insights Tab */}
-          <TabsContent value="insights" className="space-y-8">
-            <Card className="border-0 shadow-lg bg-white/90 rounded-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Brain className="mr-2 h-5 w-5" />
-                  AI-Generated Insights
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h4 className="font-medium text-green-700 mb-3 flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Key Strengths
-                    </h4>
-                    <ul className="space-y-2">
-                      {analysis.strengths.map((strength, index) => (
-                        <li key={index} className="text-sm text-gray-700 flex items-start">
-                          <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          {strength}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-red-700 mb-3 flex items-center">
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Red Flags
-                    </h4>
-                    <ul className="space-y-2">
-                      {analysis.redFlags.map((flag, index) => (
-                        <li key={index} className="text-sm text-gray-700 flex items-start">
-                          <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                          {flag}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h4 className="font-medium mb-3">Interview Recommendations</h4>
-                  <div className="space-y-3">
-                    {analysis.recommendations.map((recommendation, index) => (
-                      <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-700">{recommendation}</p>
-                      </div>
+          <TabsContent value="insights" className="animate-fade-in-up mt-0 space-y-6">
+            <div className="glass space-y-10 rounded-2xl p-6 md:p-8">
+              <div className="grid gap-10 md:grid-cols-2">
+                <div className="space-y-5">
+                  <SectionHeading icon={CheckCircle}>Key strengths</SectionHeading>
+                  <ul className="space-y-2.5">
+                    {analysis.strengths.map((strength, index) => (
+                      <li key={index} className="flex items-start gap-3 text-sm leading-relaxed">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-success shadow-[0_0_8px_hsl(var(--success))]" aria-hidden="true" />
+                        {strength}
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
-
-                <div className="border-t pt-6">
-                  <h4 className="font-medium mb-3">Suggested Interview Questions</h4>
-                  <div className="space-y-2">
-                    {analysis.interviewQuestions.map((question, index) => (
-                      <div key={index} className="p-3 border-l-4 border-blue-500 bg-blue-50">
-                        <p className="text-sm text-blue-800">{question}</p>
-                      </div>
+                <div className="space-y-5">
+                  <SectionHeading icon={AlertTriangle}>Red flags</SectionHeading>
+                  <ul className="space-y-2.5">
+                    {analysis.redFlags.map((flag, index) => (
+                      <li key={index} className="flex items-start gap-3 text-sm leading-relaxed">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-danger shadow-[0_0_8px_hsl(var(--danger))]" aria-hidden="true" />
+                        {flag}
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              <div className="space-y-5">
+                <SectionHeading icon={ListChecks}>Interview recommendations</SectionHeading>
+                <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                  {analysis.recommendations.map((recommendation, index) => (
+                    <li key={index} className="p-4 transition-colors hover:bg-secondary/40">
+                      <p className="text-sm leading-relaxed">{recommendation}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-5">
+                <SectionHeading icon={MessageSquareText}>Suggested interview questions</SectionHeading>
+                <ol className="space-y-3">
+                  {analysis.interviewQuestions.map((question, index) => (
+                    <li key={index} className="flex items-start gap-4 rounded-xl border border-border bg-background/50 p-4">
+                      <span className="figure mt-0.5 text-xs text-primary-bright">Q{index + 1}</span>
+                      <p className="text-sm font-medium leading-relaxed">{question}</p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
 
         {/* Action Buttons */}
-        <div className="flex justify-center mt-12">
-          <Button size="lg" variant="outline" className="bg-white/90 shadow-lg hover:bg-blue-100 text-blue-700 text-lg px-8 py-4 rounded-xl transition" onClick={handleDownloadReport}>
-            <Download className="mr-2 h-5 w-5" />
+        <div className="mt-12 flex justify-center">
+          <Button size="lg" className="btn-glow h-12 rounded-full px-8 text-base font-medium" onClick={handleDownloadReport}>
+            <Download className="mr-1 h-4 w-4" />
             Download Full Report
           </Button>
         </div>

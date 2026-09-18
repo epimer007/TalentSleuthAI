@@ -49,13 +49,18 @@ export async function fetchGitHubProfile(githubUrl: string): Promise<GitHubData 
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // Fetch profile data with better headers and error handling
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "TalentSleuth-AI-1.0",
+      "Cache-Control": "max-age=300",
+    }
+
+    if (process.env.GITHUB_TOKEN) {
+      headers["Authorization"] = `token ${process.env.GITHUB_TOKEN}`
+    }
+
     const profileResponse = await fetch(`https://api.github.com/users/${username}`, {
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-        "User-Agent": "TalentSleuth-AI-1.0",
-        // Add cache control to reduce API calls
-        "Cache-Control": "max-age=300",
-      },
+      headers,
       // Add timeout
       signal: AbortSignal.timeout(10000), // 10 second timeout
     })
@@ -82,12 +87,18 @@ export async function fetchGitHubProfile(githubUrl: string): Promise<GitHubData 
     // Fetch repositories with error handling
     let repositories: GitHubRepo[] = []
     try {
+      const repoHeaders: Record<string, string> = {
+        Accept: "application/vnd.github.v3+json",
+        "User-Agent": "TalentSleuth-AI-1.0",
+        "Cache-Control": "max-age=300",
+      }
+
+      if (process.env.GITHUB_TOKEN) {
+        repoHeaders["Authorization"] = `token ${process.env.GITHUB_TOKEN}`
+      }
+
       const reposResponse = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=10`, {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          "User-Agent": "TalentSleuth-AI-1.0",
-          "Cache-Control": "max-age=300",
-        },
+        headers: repoHeaders,
         signal: AbortSignal.timeout(10000),
       })
 

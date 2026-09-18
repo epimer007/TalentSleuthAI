@@ -1,20 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
-
-// Define the structure for the parsed resume (from Gemini)
-export interface ParsedResume {
-  name?: string
-  email?: string
-  phone?: string
-  location?: string
-  summary?: string
-  skills?: string[]
-  experience?: any[]
-  education?: any[]
-  githubUrl?: string
-  linkedinUrl?: string
-  portfolioUrl?: string
-  rawText: string
-}
+import { jsonrepair } from "jsonrepair"
+import { ParsedResume } from "./resume-parser"
 
 // Analysis result structure
 export interface AIAnalysis {
@@ -40,6 +26,50 @@ if (!apiKey) {
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null
 
 /**
+ * Helper to call Gemini with retries and model fallback.
+ */
+async function generateContentWithRetry(modelName: string, prompt: string, attempt = 1): Promise<string> {
+  if (!genAI) throw new Error("Gemini AI not available")
+  
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' })
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+    
+    if (!text) {
+      throw new Error("Empty response from Gemini")
+    }
+    
+    return text
+  } catch (error: any) {
+    const errorMessage = error?.message || ""
+    const isQuota = error?.status === 429 || errorMessage.includes("429") || errorMessage.includes("quota")
+    const isModelError = errorMessage.includes("model not found") || errorMessage.includes("not found") || errorMessage.includes("404")
+    
+    // Fallback logic
+    if (isModelError || isQuota) {
+      // If we were trying a 2.0 model or the non-existent 2.5, fallback to 1.5-flash
+      if (modelName.includes("2.0") || modelName.includes("2.5")) {
+        console.warn(`Gemini ${modelName} failed (${isQuota ? "quota" : "not found"}), falling back to 1.5-flash`)
+        return generateContentWithRetry("gemini-1.5-flash", prompt)
+      }
+       
+      // If we already tried 1.5-flash and failed due to quota, try a few retries with backoff
+      if (isQuota && attempt < 3) {
+        const delay = attempt * 2000 // 2s, 4s
+        console.warn(`Gemini quota hit, retrying in ${delay}ms (attempt ${attempt})...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return generateContentWithRetry(modelName, prompt, attempt + 1)
+      }
+    }
+    
+    console.error(`Gemini API error (${modelName}):`, error)
+    throw error
+  }
+}
+
+/**
  * Calls Gemini to parse the raw resume text into structured data.
  */
 export async function parseResumeText(rawText: string): Promise<ParsedResume> {
@@ -49,71 +79,75 @@ export async function parseResumeText(rawText: string): Promise<ParsedResume> {
 
   // Prompt Gemini to extract structured data from the resume text
   const prompt = `
-You are an expert resume parser. Extract the following fields from the provided resume text and return a JSON object:
+You are an expert resume parser. Extract the following fields from the provided resume text and return ONLY a valid JSON object.
+Do not include any markdown formatting like \`\`\`json or explanatory text.
+
 {
-  "name": string,
-  "email": string,
-  "phone": string,
-  "location": string,
-  "summary": string,
-  "skills": string[],
+  "name": "Full Name",
+  "email": "email@example.com",
+  "phone": "phone number",
+  "location": "City, Country",
+  "summary": "Professional summary",
+  "skills": ["Skill 1", "Skill 2"],
   "experience": [
     {
-      "company": string,
-      "position": string,
-      "duration": string,
-      "description": string
+      "company": "Company Name",
+      "position": "Job Title",
+      "duration": "Start - End",
+      "description": "Job description"
     }
   ],
   "education": [
     {
-      "institution": string,
-      "degree": string,
-      "field": string,
-      "year": string
+      "institution": "University Name",
+      "degree": "Degree",
+      "field": "Field of Study",
+      "year": "Year"
     }
   ],
-  "githubUrl": string,
-  "linkedinUrl": string,
-  "portfolioUrl": string
+  "githubUrl": "https://github.com/username",
+  "linkedinUrl": "https://linkedin.com/in/username",
+  "portfolioUrl": "https://example.com"
 }
 
 Resume Text:
 ${rawText}
 `
-  // Use only gemini-2.0-flash model
-  let model = null
+  
   try {
-    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+    const text = await generateContentWithRetry("gemini-1.5-flash", prompt)
+
+    // Try to parse JSON from the response
+    // Look for the first '{' and last '}' to extract the JSON object
+    const startIdx = text.indexOf('{')
+    const endIdx = text.lastIndexOf('}')
+    
+    if (startIdx === -1 || endIdx === -1) {
+      throw new Error("No JSON object found in Gemini response")
+    }
+    
+    const jsonStr = text.substring(startIdx, endIdx + 1)
+
+    let parsed: ParsedResume
+    try {
+      const data = JSON.parse(jsonrepair(jsonStr))
+      parsed = {
+        ...data,
+        skills: Array.isArray(data.skills) ? data.skills : [],
+        experience: Array.isArray(data.experience) ? data.experience : [],
+        education: Array.isArray(data.education) ? data.education : [],
+        rawText: rawText
+      }
+    } catch (parseError) {
+      console.error("JSON parse error after repair:", parseError, "Original text:", text)
+      throw new Error("Failed to parse resume structure. The document format might be too complex.")
+    }
+
+    return parsed
   } catch (error) {
-    throw new Error("Gemini 1.5 Flash model not available: " + error)
+    console.error("Error in parseResumeText:", error)
+    throw error
   }
-
-  if (!model) {
-    throw new Error("Gemini 1.5 Flash model could not be initialized")
-  }
-
-  const result = await model.generateContent(prompt)
-  const response = await result.response
-  const text = response.text()
-
-  // Try to parse JSON from the response
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    throw new Error("The uploaded resume does not support the format. Try uploading a different resume.")
-  }
-
-  let parsed: ParsedResume
-  try {
-    parsed = JSON.parse(jsonMatch[0])
-  } catch (parseError) {
-    throw new Error("The uploaded resume does not support the format. Try uploading a different resume.")
-  }
-
-  // Always include the raw text
-  parsed.rawText = rawText
-
-  return parsed
 }
 
 /**
@@ -154,6 +188,7 @@ Top Repositories: ${
 
   const prompt = `
 You are an expert AI talent analyst. Analyze the following candidate data and provide a comprehensive assessment.
+Return ONLY a valid JSON object. Do not include markdown formatting.
 
 RESUME DATA:
 Name: ${resume.name || "Not provided"}
@@ -186,47 +221,28 @@ Please provide a comprehensive analysis in the following JSON format:
     "skill2": score (0-100)
   }
 }
-
-Focus on:
-1. Technical skill alignment with job requirements
-2. Experience relevance and progression
-3. GitHub activity and code quality indicators (if available)
-4. Red flags like employment gaps, skill mismatches, no relevant projects on github.
-5. Specific recommendations for hiring decision
-6. Tailored interview questions based on the analysis
-7. roleMatchScore based on how well the candidate fits the job description and overallScore.
-
-Provide specific, actionable insights based on the data provided.
 `
 
-  // Use only gemini-1.5-flash model
-  let model = null
-  try {
-    model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
-  } catch (error) {
-    throw new Error("Gemini 1.5 Flash model not available: " + error)
-  }
-
-  if (!model) {
-    throw new Error("Gemini 1.5 Flash model could not be initialized")
-  }
-
-  const result = await model.generateContent(prompt)
-  const response = await result.response
-  const text = response.text()
+  const text = await generateContentWithRetry("gemini-2.0-flash", prompt)
 
   // Try to parse JSON from the response
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
+  const startIdx = text.indexOf('{')
+  const endIdx = text.lastIndexOf('}')
+  
+  if (startIdx === -1 || endIdx === -1) {
     throw new Error("No valid JSON found in Gemini analysis response")
   }
+  
+  const jsonStr = text.substring(startIdx, endIdx + 1)
 
   let analysis: AIAnalysis
   try {
-    analysis = JSON.parse(jsonMatch[0])
+    analysis = JSON.parse(jsonrepair(jsonStr))
   } catch (parseError) {
-    throw new Error("Failed to parse Gemini analysis JSON: " + parseError)
+    console.error("Analysis JSON parse error:", parseError, "Original text:", text)
+    throw new Error("Failed to parse Gemini analysis JSON")
   }
+
 
   // Validate and provide defaults
   return {

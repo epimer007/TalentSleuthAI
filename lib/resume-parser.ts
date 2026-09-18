@@ -1,3 +1,6 @@
+import { extractText, getDocumentProxy } from "unpdf"
+import mammoth from "mammoth"
+
 export interface ParsedResume {
   name?: string
   email?: string
@@ -27,7 +30,7 @@ export interface Education {
   year?: string
 }
 
-export async function parseResumeText(text: string): Promise<ParsedResume> {
+export async function parseResumeTextRegex(text: string): Promise<ParsedResume> {
   try {
     // Clean the text
     const cleanText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n")
@@ -200,29 +203,28 @@ export async function parseResumeText(text: string): Promise<ParsedResume> {
 export async function extractTextFromFile(file: File): Promise<string> {
   try {
     const fileType = file.type
+    const arrayBuffer = await file.arrayBuffer()
+    const uint8Array = new Uint8Array(arrayBuffer)
 
     if (fileType === "text/plain") {
-      return await file.text()
+      return new TextDecoder().decode(uint8Array)
     }
 
     if (fileType === "application/pdf") {
-      // For PDF parsing, use a library like pdf-parse in production
-      const arrayBuffer = await file.arrayBuffer()
-      const text = new TextDecoder().decode(arrayBuffer)
+      const pdf = await getDocumentProxy(uint8Array)
+      const { text } = await extractText(pdf, { mergePages: true })
       return text
     }
 
     if (fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-      // For DOCX parsing, use a library like mammoth in production
-      const arrayBuffer = await file.arrayBuffer()
-      const text = new TextDecoder().decode(arrayBuffer)
-      return text
+      const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })
+      return result.value
     }
 
     // Fallback to treating as text
-    return await file.text()
+    return new TextDecoder().decode(uint8Array)
   } catch (error) {
     console.error("Error extracting text from file:", error)
-    throw new Error("Failed to extract text from file. Please try a different file format.")
+    throw new Error(error instanceof Error ? error.message : "Failed to extract text from file.")
   }
 }
