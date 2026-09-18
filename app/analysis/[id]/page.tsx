@@ -374,12 +374,12 @@ export default function AnalysisPage() {
               </div>
             </div>
 
-            <div className="glass flex shrink-0 items-stretch divide-x divide-border rounded-xl">
-              <div className="px-6 py-4 text-center">
+            <div className="glass flex w-full shrink-0 items-stretch divide-x divide-border rounded-xl md:w-auto">
+              <div className="min-w-0 flex-1 px-4 py-4 text-center md:flex-none md:px-6">
                 <CountUp value={analysis.overallScore} className="figure text-4xl font-semibold leading-none text-glow" />
                 <div className="eyebrow mt-2">Overall score</div>
               </div>
-              <div className="px-6 py-4 text-center">
+              <div className="min-w-0 flex-1 px-4 py-4 text-center md:flex-none md:px-6">
                 <CountUp value={analysis.roleMatchScore} suffix="%" className="figure text-4xl font-semibold leading-none" />
                 <div className="eyebrow mt-2">Role match</div>
               </div>

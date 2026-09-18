@@ -53,6 +53,9 @@ interface AnalysisData {
   candidateId: string
 }
 
+const phaseLabels = ["Extracting text", "AI reasoning", "Finalizing"]
+const phaseThresholds = [0, 40, 85]
+
 const steps: { key: Step; label: string; index: string }[] = [
   { key: "UPLOAD", label: "Setup", index: "01" },
   { key: "ANALYZING", label: "Analysis", index: "02" },
@@ -478,8 +481,8 @@ export default function WizardPage() {
                 <p className="eyebrow-accent">02 · Analysis in progress</p>
                 <p className="figure text-xs text-muted-foreground">{progress}%</p>
               </div>
-              <div className="space-y-8 p-8">
-                <div className="flex items-start gap-6">
+              <div className="space-y-8 p-5 sm:p-8">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
                   <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
                     <span className="pulse-ring" />
                     <span className="pulse-ring" style={{ animationDelay: "0.8s" }} />
@@ -506,19 +509,19 @@ export default function WizardPage() {
                       <div className="shimmer absolute inset-0" aria-hidden="true" />
                     </div>
                   </div>
-                  <div className="flex justify-between">
-                    {["Extracting text", "AI reasoning", "Finalizing"].map((label, i) => {
-                      const threshold = [0, 40, 85][i]
-                      return (
-                        <span key={label} className={cn("eyebrow transition-colors duration-500", progress >= threshold ? "text-primary-bright" : undefined)}>
-                          {label}
-                        </span>
-                      )
-                    })}
+                  <div className="hidden justify-between sm:flex">
+                    {phaseLabels.map((label, i) => (
+                      <span key={label} className={cn("eyebrow transition-colors duration-500", progress >= phaseThresholds[i] ? "text-primary-bright" : undefined)}>
+                        {label}
+                      </span>
+                    ))}
                   </div>
+                  <p className="eyebrow text-primary-bright sm:hidden">
+                    {phaseLabels[phaseThresholds.filter((t) => progress >= t).length - 1] ?? phaseLabels[0]}
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-3 sm:grid-cols-3">
                   {[
                     { icon: ShieldCheck, label: "Verification", at: 15 },
                     { icon: Target, label: "Matching", at: 50 },
@@ -529,11 +532,11 @@ export default function WizardPage() {
                       <div
                         key={label}
                         className={cn(
-                          "rounded-xl border p-3 text-center transition-all duration-500",
+                          "flex min-w-0 items-center gap-3 rounded-xl border p-3 transition-all duration-500 sm:flex-col sm:justify-center sm:gap-1.5 sm:text-center",
                           active ? "border-primary/50 bg-primary/10 shadow-[0_0_20px_hsl(var(--primary)/0.25)]" : "border-border bg-background/40",
                         )}
                       >
-                        <Icon className={cn("mx-auto mb-1.5 h-4 w-4 transition-colors duration-500", active ? "text-primary-bright" : "text-muted-foreground/60")} />
+                        <Icon className={cn("h-4 w-4 shrink-0 transition-colors duration-500", active ? "text-primary-bright" : "text-muted-foreground/60")} />
                         <span className={cn("eyebrow transition-colors duration-500", active ? "text-foreground" : undefined)}>{label}</span>
                       </div>
                     )
@@ -586,12 +589,12 @@ export default function WizardPage() {
                     </div>
                   </div>
 
-                  <div className="glass flex shrink-0 items-stretch divide-x divide-border rounded-xl">
-                    <div className="px-6 py-4 text-center">
+                  <div className="glass flex w-full shrink-0 items-stretch divide-x divide-border rounded-xl md:w-auto">
+                    <div className="min-w-0 flex-1 px-4 py-4 text-center md:flex-none md:px-6">
                       <CountUp value={analysisData.analysis.overallScore} className="figure text-4xl font-semibold leading-none text-glow" />
                       <div className="eyebrow mt-2">Global score</div>
                     </div>
-                    <div className="px-6 py-4 text-center">
+                    <div className="min-w-0 flex-1 px-4 py-4 text-center md:flex-none md:px-6">
                       <CountUp value={analysisData.analysis.roleMatchScore} suffix="%" className="figure text-4xl font-semibold leading-none" />
                       <div className="eyebrow mt-2">Role fit</div>
                     </div>
